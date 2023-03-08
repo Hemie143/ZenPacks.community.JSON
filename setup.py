@@ -3,13 +3,13 @@
 # or saved.  Do not modify them directly here.
 # NB: PACKAGES is deprecated
 NAME = "ZenPacks.community.JSON"
-VERSION = "1.0.0dev"
-AUTHOR = "Your Name Here"
+VERSION = "1.0.0"
+AUTHOR = "Laurent Hemeryck"
 LICENSE = ""
 NAMESPACE_PACKAGES = ['ZenPacks', 'ZenPacks.community']
 PACKAGES = ['ZenPacks', 'ZenPacks.community', 'ZenPacks.community.JSON']
 INSTALL_REQUIRES = ['ZenPacks.zenoss.ZenPackLib']
-COMPAT_ZENOSS_VERS = ""
+COMPAT_ZENOSS_VERS = ">=6.5"
 PREV_ZENPACK_NAME = ""
 # STOP_REPLACEMENTS
 ################################

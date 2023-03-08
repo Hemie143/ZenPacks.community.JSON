@@ -1,1 +1,18 @@
 name: ZenPacks.community.JSON
+
+device_classes:
+  /:
+    templates:
+      RESTMonitor:
+        targetPythonClass: Products.ZenModel.Device
+        datasources:
+          RESTMonitorValue:
+            type: RESTMonitorValue
+            plugin_classname: ZenPacks.community.JSON.datasources.RESTMonitorValueDataSource.RESTMonitorValueDataSourcePlugin
+#          RESTMonitorNumeric:
+#            type: Python
+#            plugin_classname: ZenPacks.community.JSON.datasources.RESTMonitorNumericDataSource
+
+event_classes:
+  /Status/RESTValue:
+    remove: false

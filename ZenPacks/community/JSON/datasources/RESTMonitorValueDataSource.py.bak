@@ -1,0 +1,165 @@
+import logging
+
+from twisted.internet.defer import returnValue, inlineCallbacks, Deferred
+
+from zope.schema.vocabulary import SimpleVocabulary
+from zope.component import adapts
+from zope.interface import implements
+
+from ZenPacks.zenoss.PythonCollector.datasources.PythonDataSource import PythonDataSource, PythonDataSourcePlugin
+
+from Products.Zuul.form import schema
+from Products.Zuul.infos import ProxyProperty
+from Products.ZenEvents import ZenEventClasses
+from Products.Zuul.infos.template import RRDDataSourceInfo
+from Products.Zuul.interfaces import IRRDDataSourceInfo
+from Products.Zuul.utils import ZuulMessageFactory as _t
+
+log = logging.getLogger('zen.RESTMonitor')
+SOURCETYPE = "RESTMonitorValue"
+
+class RESTMonitorValueDataSource(PythonDataSource):
+    """Explanation of what RESTMonitorValueDataSource does."""
+
+    ZENPACKID = 'ZenPacks.community.JSON'
+
+    # Friendly name for your data source type in the drop-down selection.
+    sourcetypes = (SOURCETYPE,)
+    sourcetype = SOURCETYPE
+
+    component = "${here/id}"
+    cycletime = "${here/zGoogleCloudPlatformStackDriverMonitoringInterval}"
+    eventClass = ZenEventClasses.Unknown
+
+    # Collection plugin for this type. Defined below in this file.
+    # plugin_classname = ( ZENPACKID + '.datasources.RESTMonitorValueDataSource.RESTMonitorValueDataSourcePlugin')
+    plugin_classname = ".".join((__name__, "RESTMonitorValueDataSourcePlugin"))
+
+    hostname = '${dev/id}'
+    ipAddress = '${dev/manageIp}'
+    port = 443
+    useSsl = True
+    url = '/'
+    timeout = 60
+    method = 'GET'
+    headers = ''
+    eventValues = ''
+    valueType = 'String'
+    invert = False
+
+    # TODO: Add case sensitive bool
+    _properties = PythonDataSource._properties + (
+        {'id': 'hostname', 'type': 'string', 'mode': 'w'},
+        {'id': 'ipAddress', 'type': 'string', 'mode': 'w'},
+        {'id': 'port', 'type': 'int', 'mode': 'w'},
+        {'id': 'useSsl', 'type': 'boolean', 'mode': 'w'},
+        {'id': 'url', 'type': 'string', 'mode': 'w'},
+        {'id': 'timeout', 'type': 'int', 'mode': 'w'},
+        {'id': 'method', 'type': 'string', 'mode': 'w'},
+        {'id': 'headers', 'type': 'string', 'mode': 'w'},
+        {'id': 'eventValues', 'type': 'lines', 'mode': 'w'},
+        {'id': 'valueType', 'type': 'string', 'mode': 'w'},
+        {'id': 'invert', 'type': 'boolean', 'mode': 'w'},
+    )
+
+    def addDataPoints(self):
+        if not self.datapoints._getOb('status', None):
+            self.manage_addRRDDataPoint('status')
+
+
+class IRESTMonitorValueDataSourceInfo(IRRDDataSourceInfo):
+    """Interface that creates the web form for this data source type."""
+
+    timeout = schema.Text(
+        title=_t('Timeout (seconds)'))
+    hostname = schema.Text(
+        group=_t('RESTMonitorValue'),
+        title=_t('Hostname'))
+    ipAddress = schema.Text(
+        group=_t('RESTMonitorValue'),
+        title=_t('IP Address'))
+    port = schema.Int(
+        group=_t('RESTMonitorValue'),
+        title=_t('Port'))
+    useSsl = schema.Bool(
+        group=_t('RESTMonitorValue'),
+        title=_t('Use SSL ?'))
+    url = schema.Text(
+        group=_t('RESTMonitorValue'),
+        title=_t('URL'))
+    method = schema.Choice(
+        group=_t('RESTMonitorValue'),
+        vocabulary=SimpleVocabulary.fromValues([
+            "GET",
+            "POST",
+        ]),
+        title=_t('HTTP Method'))
+    headers = schema.Text(
+        group=_t('RESTMonitorValue'),
+        title=_t('Headers'))
+    eventValues = schema.TextLine(
+        group=_t('RESTMonitorValue'),
+        title=_t('Values to create events'))
+    valueType = schema.Choice(
+        group=_t('RESTMonitorValue'),
+        vocabulary=SimpleVocabulary.fromValues([
+            "String",
+            "Numeric",
+            "Boolean",
+        ]),
+        title=_t('Values type'))
+    invert = schema.Bool(
+        group=_t('RESTMonitorValue'),
+        title=_t('Invert expression'))
+
+class RESTMonitorValueDataSourceInfo(RRDDataSourceInfo):
+    """Adapter between IRESTMonitorValueDataSourceInfo and RESTMonitorValueDataSource."""
+
+    implements(IRESTMonitorValueDataSourceInfo)
+    adapts(RESTMonitorValueDataSource)
+
+    testable = False
+    hostname = ProxyProperty('hostname')
+    ipAddress = ProxyProperty('ipAddress')
+    port = ProxyProperty('port')
+    useSsl = ProxyProperty('useSsl')
+    url = ProxyProperty('url')
+    timeout = ProxyProperty('timeout')
+    method = ProxyProperty('method')
+    headers = ProxyProperty('headers')
+    eventValues = ProxyProperty('eventValues')
+    valueType = ProxyProperty('valueType')
+    invert = ProxyProperty('invert')
+
+
+class RESTMonitorValueDataSourcePlugin(PythonDataSourcePlugin):
+
+    @classmethod
+    def params(cls, datasource, context):
+        params = dict()
+        params["hostname"] = datasource.hostname
+        params["ipAddress"] = datasource.ipAddress
+        params["port"] = datasource.port
+        params["useSsl"] = datasource.useSsl
+        params["url"] = datasource.url
+        params["timeout"] = datasource.timeout
+        params["method"] = datasource.method
+        params["headers"] = datasource.headers
+        params["eventValues"] = datasource.eventValues
+        params["valueType"] = datasource.valueType
+        params["invert"] = datasource.invert
+        return params
+
+    @inlineCallbacks
+    def collect(self, config):
+        log.debug('Starting DossierManager eDepot KBO collect')
+
+        d = Deferred()
+        d = yield True
+        returnValue(d)
+
+
+    def onSuccess(self, result, config):
+        log.debug('Success job eDepotKBOSourcePlugin - result is {}'.format(result))
+        data = self.new_data()
+        return data
