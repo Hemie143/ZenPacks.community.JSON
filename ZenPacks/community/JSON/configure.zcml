@@ -3,11 +3,18 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:zcml="http://namespaces.zope.org/zcml">
 
-    <!-- Info Adapters: DataSources -->
+    <!-- Info Adapters: DataSource - RESTMonitorValue -->
     <adapter
         provides=".datasources.RESTMonitorValueDataSource.IRESTMonitorValueDataSourceInfo"
         for=".datasources.RESTMonitorValueDataSource.RESTMonitorValueDataSource"
         factory=".datasources.RESTMonitorValueDataSource.RESTMonitorValueDataSourceInfo"
+        />
+
+    <!-- Info Adapters: DataSources - RESTMonitorNumeric -->
+    <adapter
+        provides=".datasources.RESTMonitorNumericDataSource.IRESTMonitorNumericDataSourceInfo"
+        for=".datasources.RESTMonitorNumericDataSource.RESTMonitorNumericDataSource"
+        factory=".datasources.RESTMonitorNumericDataSource.RESTMonitorNumericDataSourceInfo"
         />
 
 </configure>

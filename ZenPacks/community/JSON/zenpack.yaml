@@ -9,9 +9,9 @@ device_classes:
           RESTMonitorValue:
             type: RESTMonitorValue
             plugin_classname: ZenPacks.community.JSON.datasources.RESTMonitorValueDataSource.RESTMonitorValueDataSourcePlugin
-#          RESTMonitorNumeric:
-#            type: Python
-#            plugin_classname: ZenPacks.community.JSON.datasources.RESTMonitorNumericDataSource
+          RESTMonitorNumeric:
+            type: RESTMonitorNumeric
+            plugin_classname: ZenPacks.community.JSON.datasources.RESTMonitorNumericDataSource.RESTMonitorNumericDataSourcePlugin
 
 event_classes:
   /Status/RESTValue:

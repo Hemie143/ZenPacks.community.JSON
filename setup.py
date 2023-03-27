@@ -5,7 +5,7 @@
 NAME = "ZenPacks.community.JSON"
 VERSION = "1.0.0"
 AUTHOR = "Laurent Hemeryck"
-LICENSE = ""
+LICENSE = "GPLv3"
 NAMESPACE_PACKAGES = ['ZenPacks', 'ZenPacks.community']
 PACKAGES = ['ZenPacks', 'ZenPacks.community', 'ZenPacks.community.JSON']
 INSTALL_REQUIRES = ['ZenPacks.zenoss.ZenPackLib']

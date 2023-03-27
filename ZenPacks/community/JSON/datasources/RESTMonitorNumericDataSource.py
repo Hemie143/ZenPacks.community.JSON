@@ -22,20 +22,20 @@ from Products.Zuul.utils import ZuulMessageFactory as _t
 from ZenPacks.zenoss.PythonCollector.datasources.PythonDataSource import PythonDataSource, PythonDataSourcePlugin
 
 log = logging.getLogger('zen.RESTMonitor')
-SOURCETYPE = "RESTMonitorValue"
+SOURCETYPE = "RESTMonitorNumeric"
 
 
-class RESTMonitorValueDataSource(PythonDataSource):
-    """Explanation of what RESTMonitorValueDataSource does."""
+class RESTMonitorNumericDataSource(PythonDataSource):
+    """Explanation of what RESTMonitorNumericDataSource does."""
 
     ZENPACKID = 'ZenPacks.community.JSON'
 
     # Friendly name for your data source type in the drop-down selection.
-    sourcetypes = ('RESTMonitorValue',)
+    sourcetypes = ('RESTMonitorNumeric',)
     sourcetype = sourcetypes[0]
 
     # Collection plugin for this type. Defined below in this file.
-    plugin_classname = ".".join((__name__, "RESTMonitorValueDataSourcePlugin"))
+    plugin_classname = ".".join((__name__, "RESTMonitorNumericDataSourcePlugin"))
 
     # Extra attributes for my type.
     hostname = '${dev/id}'
@@ -47,9 +47,6 @@ class RESTMonitorValueDataSource(PythonDataSource):
     method = 'GET'
     headers = ''
     jsonPath = ''
-    eventValues = ''
-    valueType = 'String'
-    invert = False
 
     _properties = PythonDataSource._properties + (
         {'id': 'hostname', 'type': 'string', 'mode': 'w'},
@@ -61,17 +58,14 @@ class RESTMonitorValueDataSource(PythonDataSource):
         {'id': 'method', 'type': 'string', 'mode': 'w'},
         {'id': 'headers', 'type': 'string', 'mode': 'w'},
         {'id': 'jsonPath', 'type': 'string', 'mode': 'w'},
-        {'id': 'eventValues', 'type': 'lines', 'mode': 'w'},
-        {'id': 'valueType', 'type': 'string', 'mode': 'w'},
-        {'id': 'invert', 'type': 'boolean', 'mode': 'w'},
     )
 
     def addDataPoints(self):
-        if not self.datapoints._getOb('status', None):
-            self.manage_addRRDDataPoint('status')
+        if not self.datapoints._getOb('value', None):
+            self.manage_addRRDDataPoint('value')
 
 
-class IRESTMonitorValueDataSourceInfo(IRRDDataSourceInfo):
+class IRESTMonitorNumericDataSourceInfo(IRRDDataSourceInfo):
     """Interface that creates the web form for this data source type."""
 
     hostname = schema.TextLine(
@@ -102,28 +96,12 @@ class IRESTMonitorValueDataSourceInfo(IRRDDataSourceInfo):
     jsonPath = schema.TextLine(
         group=_t('JSON data'),
         title=_t('JSON Path'))
-    eventValues = schema.Text(
-        group=_t('JSON data'),
-        title=_t('Values to create events'))
-    valueType = schema.Choice(
-        group=_t('JSON data'),
-        vocabulary=SimpleVocabulary.fromValues([
-            "String",
-            "Numeric",
-            "Integer",
-            "Float",
-            "Boolean",
-        ]),
-        title=_t('Values type'))
-    invert = schema.Bool(
-        group=_t('JSON data'),
-        title=_t('Invert expression'))
 
-class RESTMonitorValueDataSourceInfo(RRDDataSourceInfo):
-    """Adapter between IRESTMonitorValueDataSourceInfo and RESTMonitorValueDataSource."""
+class RESTMonitorNumericDataSourceInfo(RRDDataSourceInfo):
+    """Adapter between IRESTMonitorNumericDataSourceInfo and RESTMonitorNumericDataSource."""
 
-    implements(IRESTMonitorValueDataSourceInfo)
-    adapts(RESTMonitorValueDataSource)
+    implements(IRESTMonitorNumericDataSourceInfo)
+    adapts(RESTMonitorNumericDataSource)
 
     testable = False
     cycletime = ProxyProperty('cycletime')
@@ -136,14 +114,13 @@ class RESTMonitorValueDataSourceInfo(RRDDataSourceInfo):
     method = ProxyProperty('method')
     headers = ProxyProperty('headers')
     jsonPath = ProxyProperty('jsonPath')
-    eventValues = ProxyProperty('eventValues')
-    valueType = ProxyProperty('valueType')
-    invert = ProxyProperty('invert')
 
 
-class RESTMonitorValueDataSourcePlugin(PythonDataSourcePlugin):
+class RESTMonitorNumericDataSourcePlugin(PythonDataSourcePlugin):
     @classmethod
     def params(cls, datasource, context):
+        log.info("RESTMonitorNumericDataSourcePlugin params start")
+
         params = dict()
         params["hostname"] = datasource.talesEval(datasource.hostname, context)
         params["port"] = datasource.port
@@ -154,16 +131,13 @@ class RESTMonitorValueDataSourcePlugin(PythonDataSourcePlugin):
         params["method"] = datasource.method
         params["headers"] = datasource.headers
         params["jsonPath"] = datasource.jsonPath
-        params["eventValues"] = datasource.eventValues
-        params["valueType"] = datasource.valueType
-        params["invert"] = datasource.invert
-        log.debug("REST params: {}".format(params))
         return params
 
 
     @inlineCallbacks
     def collect(self, config):
-        log.debug('Starting RESTMonitorValue collect')
+        log.debug('Starting RESTMonitorNumeric collect')
+
         ds0 = config.datasources[0]
         params = ds0.params
 
@@ -195,6 +169,7 @@ class RESTMonitorValueDataSourcePlugin(PythonDataSourcePlugin):
             agent = Agent(reactor, contextFactory=SkipCertifContextFactory(), connectTimeout=timeout)
         else:
             agent = Agent(reactor, connectTimeout=timeout)
+
         try:
             response = yield agent.request(params['method'], url, Headers(headers))
             response_body = yield readBody(response)
@@ -208,18 +183,11 @@ class RESTMonitorValueDataSourcePlugin(PythonDataSourcePlugin):
         returnValue(None)
 
     def onSuccess(self, result, config):
-        log.debug('Success job RESTMonitorValueDataSourcePlugin - result is {}'.format(result))
+        log.debug('Success job RESTMonitorNumericDataSourcePlugin - result is {}'.format(result))
 
         ds0 = config.datasources[0]
         jsonPath = ds0.params['jsonPath']
-        eventValues = ds0.params['eventValues']
-        valueType = ds0.params['valueType']
-        invert = ds0.params['invert']
-
         data = self.new_data()
-        if not (jsonPath and eventValues):
-            log.warning("There is no data to analyze. Please fill in the JSON Path and the event Values")
-            return data
 
         jsonpath_expression = parse(jsonPath)
         matches = jsonpath_expression.find(result)      # list
@@ -231,58 +199,13 @@ class RESTMonitorValueDataSourcePlugin(PythonDataSourcePlugin):
 
         match = matches[0]
         jsonValue = match.value
-        originalValue = match.value
         log.debug("{} - Found value in JSON: {} ({})".format(ds0.datasource, jsonValue, type(jsonValue)))
 
-        eventValues = eventValues.splitlines()
-        if valueType == 'String':
-            eventValues = [s.lower() for s in eventValues]
-            jsonValue = jsonValue.lower()
-        elif valueType == 'Integer':
-            try:
-                eventValues = [int(x) for x in eventValues]
-                jsonValue = int(jsonValue)
-            except:
-                log.error('Could not cast values into an integer: {}'.format(eventValues))
-        elif valueType == 'Float':
-            try:
-                eventValues = [float(x) for x in eventValues]
-                jsonValue = float(jsonValue)
-            except:
-                log.error('Could not cast values into a float: {}'.format(eventValues))
-        elif valueType == 'Boolean':
-            try:
-                eventValues = [x.capitalize() == "True" for x in eventValues]
-                jsonValue = bool(jsonValue) # This shouldn't be required as the JSON object has been loaded in a dict
-            except:
-                log.error('Could not cast values into a boolean: {}'.format(eventValues))
-        else:
-            log.error('Wrong type of type value: {}'.format(valueType))
-        log.debug("Event values: {}".format(eventValues))
-
-        eventTrigger = jsonValue in eventValues
-        if invert:
-            eventTrigger = not eventTrigger
-
-        if eventTrigger:
-            severity = ds0.severity
-        else:
-            severity = 2
-
-        msg = 'The JSON value in {} is {}.'.format(match.full_path, originalValue)
-        data['events'].append({
-            'device': config.id,
-            'component': ds0.component,
-            'severity': severity,
-            'eventClass': ds0.eventClass,
-            'eventKey': ds0.eventKey,
-            'eventClassKey': '',
-            'summary': msg,
-            'message': msg,
-        })
+        dpname = '_'.join((ds0.datasource, 'value'))
+        data['values'][ds0.component][dpname] = (jsonValue, 'N')
         return data
 
     def onError(self, result, config):
-        log.debug('Error job RESTMonitorValueDataSourcePlugin - result is {}'.format(result))
+        log.debug('Error job RESTMonitorNumericDataSourcePlugin - result is {}'.format(result))
         data = self.new_data()
         return data
